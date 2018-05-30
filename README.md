@@ -1,11 +1,9 @@
 # DAND Udacity.
 
-in this repository, I will be writing about my experience with the Data Analyst Nano Degree by Udacity.
+Aloha there!
 
-you can see some summaries of the projects and the terms in my [wiki](https://github.com/Ahmed-Ayman/DAND-udacity/wiki)
+I'm a DAND graduate student, I've been interested and passionate about the Data science that's why I applied for the NTL [scholarship](http://techleaders.eg/) and got accepted in the Data analyst nano degree program.
 
-also feel free to check out my projects above.
+The DAND program was divided into 2 semester, it took me around 4 months to finish the first and another 4 months to finish the 2nd since I was just 
+super busy with college, full time development job and another Google Challenge also on Udacity.
 
-I have started it in 9/15/2017 and planning to finish it ASAP.
-
-so, wish me some luck guys!.. I'm enjoying it alot btw!... Udacity is the best!

@@ -1,0 +1,495 @@
+EDA Project by Ahmed
+========================================================
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,warning = FALSE, error = FALSE,
+                      message = FALSE,cache=TRUE)
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, packages}
+library(ggplot2) # for general plots.
+library(dplyr) # for data sets manipulations.
+library(gridExtra) # for making a grid of plots.
+library(corrplot) # for making a correlation table.
+```
+
+```{r echo=FALSE, Load_the_Data}
+# pld stands for prosperLoanData
+pld <- read.csv('prosperLoanData.csv')
+```
+
+# Understanding the data set 
+> ** Understanding the data set**:
+  This data set contains 113,937 loans with 81 variables on each loan, 
+  including loan amount, borrower rate (or interest rate), current loan status,
+  borrower income, borrower employment status, borrower credit history, and the 
+  latest payment information.
+  
+  [This](https://docs.google.com/spreadsheets/d/1gDyi_L4UvIrLTEC6Wri5nbaMmkGmLQBk-Yx3z0XDEtI/edit?usp=sharing) is the Variables dictionary which contains helpful info about each summary.
+some interesting variables that we could look at: 
+- IncomeRange
+- BorrowerRate
+- IsBorrowerHomeOwner
+- the BorrowerAPR
+- the Employment status
+- LoanStatus
+- LoanDuration
+- LenderYield
+- Grade of Borrowers.
+- Credit Score
+
+### the structure  of the data set.
+```{r echo=FALSE}
+View(head(pld))
+str(pld)
+```
+
+# Univariate Analysis
+
+### the income Range
+```{r echo=FALSE}
+# removed the Not Displayed values.
+ggplot(aes(x = IncomeRange), data = subset(pld, pld$IncomeRange != 'Not displayed'))+
+  geom_bar( fill='yellow',color = 'black',size =1)
+  summary(pld$IncomeRange)
+```
+
+> most of the Borrowers are in the $25,000-49,999 segment.
+
+### the number of home owners.
+```{r echo=FALSE}
+ggplot(aes(x = IsBorrowerHomeowner, ),data = pld)+
+  geom_bar(fill = c('red','green'))
+summary(pld$IsBorrowerHomeowner)
+```
+
+> the number of those who own homes and those who don't is very close.
+
+### the Borrwoer rate interest
+```{r echo=FALSE}
+ggplot(aes(x=BorrowerRate),data=pld)+
+  geom_histogram(binwidth = 0.02,color='black',fill='white')
+print('the Mean is : ')
+mean(pld$BorrowerRate)
+```
+
+> this histogram displays the Borrower interest rate distribution of the Borrowers interest Rate, we can see that the average loan interest is 19.28 %  and here's the summary of the distribution including the five numbers summary.
+
+```{r echo=FALSE}
+summary(pld$BorrowerRate)
+```
+
+### employment status
+```{r echo=FALSE}
+pld$EmploymentStatus <- factor(pld$EmploymentStatus,levels = 
+ordered(c('Not employed',' Retired','Part-time',
+          'Self-employed','Full-time','Employed')))
+ggplot(aes(x=EmploymentStatus),data= subset(pld,!pld$EmploymentStatus == ''))+
+  geom_bar(color='green',fill='brown',size=0.8)+
+  xlab('Employment Status')
+summary(pld$EmploymentStatus)
+```
+
+> its obvious now that most of the Borrowers are employed.
+
+```{r echo=FALSE}
+
+ggplot(aes(x=BorrowerAPR),data=pld)+
+geom_bar(binwidth = 0.02,color='red',fill='black')
+ggplot(aes(x=BorrowerAPR),data=pld)+
+geom_bar(binwidth = 0.02,color='red',fill='black')
+
+print("The APR summary statistics is :")
+summary(pld$BorrowerAPR)
+```
+
+> The loan APR ranges from less than 5 % up to about 51 %.
+Most borrowers seems to have a APR from 10 % upto 30 % with average equals to 21.9 %.
+
+### Loan Status
+```{r echo=FALSE}
+pld$LoanStatus <- factor(pld$LoanStatus, levels = 
+ordered(c("Cancelled","Chargedoff", "Completed", "Current", "Defaulted","FinalPaymentInProgress","PastDue.")))
+
+ggplot(aes(x=LoanStatus),data = subset(pld,!is.na(LoanStatus)))+
+  geom_bar(fill='gray',color='red')+
+  xlab('Loan Status')
+# displlaying the percentage of each category using dplyr.
+pld_status_table=table(pld$LoanStatus)
+x=data.frame(pld_status_table)
+names(x)=c('LoanStatus', 'Percent')
+category=data.frame(table(pld$LoanStatus))
+x$Percent= round(category$Freq/sum(category$Freq)*100 , 2)
+print(x)
+```
+
+> most of the borrowers are still currently taking loans with a percentage of 50.57%, 34.03% has already completed, and 10.72% are charged off!
+
+### Loan duration
+```{r echo=FALSE}
+ggplot(aes(x=as.factor(Term)),data=subset(pld,!is.na(Term)))+
+  geom_bar(fill='pink')+xlab("Term (months)")
+```
+
+> 36 months is most common Term.
+
+
+### ProsperRating Grade of the borrowers 
+```{r}
+
+pld$ProsperRating..Alpha.=factor(pld$ProsperRating..Alpha.,levels =
+      ordered(ordered(c('AA','A','B','C', 'D','E','HR',""))))
+ggplot(aes(x=ProsperRating..Alpha.),data=
+subset(pld,ProsperRating..Alpha. %in% ordered(c('AA','A','B','C', 'D','E','HR'))))+ 
+  geom_bar(color='black',fill='dark green',size=1.25)+
+  xlab('Borrower Grade')
+```
+
+> the Grade is normally distributed with a mode equals to C.
+
+### Lender Yield.
+```{r}
+ggplot(aes (x = LenderYield), data = pld) +
+  geom_histogram(color='red',fill = 'white')
+summary(pld$LenderYield)                                        
+```
+
+> Lender yield is equal to the interest rate on the loan less the servicing fee
+and it's average equals 18.27% .
+
+### Borrower APR.
+
+```{r echo = FALSE}
+
+ggplot(aes(x=BorrowerAPR),data=pld)+
+geom_bar(binwidth = 0.02,color='red',fill='maroon') +
+  labs(x="Borrower APR",y="Count",title="Borrower APR distribution")
+summary(pld$BorrowerAPR)
+```
+this plot shows the distribution of the Borrower APR Variable with an average
+equals to 21.88%.
+
+# Bivariate Analysis
+> some questions in my mind right now..
+- is there a relationship between being a home owner and the loan status? 
+probably the home owners complete their loans more quickly!?
+
+### home owner by current loan status
+
+```{r echo=FALSE}
+
+by(pld$LoanStatus ,pld$IsBorrowerHomeowner,summary)
+
+p1 <- ggplot(aes(x=IsBorrowerHomeowner),data=
+    subset(pld, (LoanStatus =='Current' )))+
+  geom_bar(fill='green2')+xlab('currently loaners and Has a Home')
+p2 <- ggplot(aes(x=IsBorrowerHomeowner),data =
+subset(pld, (LoanStatus=='Completed' )))+
+geom_bar(fill = 'green2')+xlab('Completed the loan and Has a Home')
+
+p3 <- ggplot(aes(x=IsBorrowerHomeowner),data=
+subset(pld, !(LoanStatus=='Chargedoff' | LoanStatus == 'Defaulted')))+
+  geom_bar(fill='blue')+xlab('chargedoff or Defaulted and Has a Home')
+
+grid.arrange(p1,p2,p3, ncol = 2)
+```
+
+a plot shows the relation between the Home owners and the Current status of 
+loans.
+
+
+### Estimated Effective Yield, EstimatedReturn and Estimated Loss 
+
+> - is there a relation betweem the Effective Yield and the Return or the Loss?
+```{r}
+p1 <- ggplot(data=pld, aes(x=EstimatedEffectiveYield,y=EstimatedReturn))+
+  geom_point(color='dark green',alpha=0.1)+
+  xlab('Estimated Effective Yield')+
+  ylab('Estimated Return')
+
+p2 <- ggplot(data=pld, aes(x=EstimatedLoss,y=EstimatedReturn))+
+  geom_point(color='red',alpha=0.1)+
+  xlab('Estimated Loss')+
+  ylab('')
+grid.arrange(p1,p2,ncol=2)
+```
+
+There's a positive relation between the the Estimated Return and the Estimated 
+EffectiveYield whereas there's a negative relation between the Return and the
+Estimated 
+Loss.
+
+### Monthly payments with loan amount
+
+> - probably the monhly payments has a relation with the loans amout, let's make
+sure!?
+
+```{r echo=FALSE}
+ggplot(aes(x=LoanOriginalAmount,y=MonthlyLoanPayment),data=pld)+
+  geom_point(color='Green',alpha=1/2)
+```
+
+obviously the Higher Loans are correlated with the monthly Payments.
+
+
+### Estimated loss and Prosper rating
+> - bad ratings probably have a relation with the Estimated loss?
+
+```{r echo=FALSE}
+pld$ProsperRating..Alpha. <- factor(pld$ProsperRating..Alpha., levels = 
+  ordered(rev(c('AA','A', 'B','C','D','E','HR'))))
+ggplot(aes(x=ProsperRating..Alpha., y=EstimatedLoss),
+       data=subset(pld,!is.na(ProsperRating..Alpha.)))+
+geom_boxplot(aes(fill=ProsperRating..Alpha.))+
+  guides(fill=guide_legend(title = 'Rating'))
+```
+
+> Yep it's a negative correlation, the bad ratings are associated with High
+Estimated Loss.
+
+
+### Prosper rating and credit score 
+> is there's a relation between the Prosper Ratin and the Credit score?
+
+```{r echo=FALSE}
+pld$ProsperRating..Alpha. <- factor(pld$ProsperRating..Alpha., levels = 
+                              ordered(rev(c('AA','A', 'B','C','D','E','HR'))))
+p1 <- ggplot(aes(x=ProsperRating..Alpha., y=CreditScoreRangeLower),
+             data=subset(pld,!is.na(ProsperRating..Alpha.)))+
+  geom_boxplot(aes(fill=ProsperRating..Alpha.))+
+  guides(fill=guide_legend(title = 'Rating'))+
+  xlab('Prosper Rating')+
+  ylab('Credi Score Range Lower')
+
+p2 <- ggplot(aes(x=ProsperRating..Alpha., y=CreditScoreRangeUpper),
+             data=subset(pld,!is.na(ProsperRating..Alpha.)))+
+  geom_boxplot(aes(fill=ProsperRating..Alpha.))+
+  guides(fill=guide_legend(title = 'Rating'))+
+  xlab('Prosper Rating')+
+  ylab('Credi Score Range Upper')
+grid.arrange(p1,p2,ncol=1)
+```
+
+Credit scores have an impact on the proposer rating, as the credit score 
+increases the Rating increases too which is too obvious.
+
+
+### APR and Prosper rating
+> - now let's look at the APR, is there a relation between it and the Rating?
+
+```{r echo=FALSE}
+ggplot(aes(ProsperRating..Alpha.,y=BorrowerAPR),data = 
+         subset(pld,!is.na(ProsperRating..Alpha.)))+
+geom_boxplot(aes(fill=ProsperRating..Alpha.))+
+  xlab('Prosper Rating')
+```  
+
+borrowers with good rating have lower APRs and those with 
+bad ratings have high APRs.
+
+
+
+### APR and interest rate
+```{r echo=FALSE}
+ggplot(aes(x=BorrowerAPR,y=BorrowerRate),data=pld)+geom_point(fill=I('#F79420'),
+                                                             color=I('black'),shape=21,alpha=0.5)+geom_smooth(method='lm',color='dark green')
+```
+
+```{r echo=FALSE, Bivariate_Plots}
+print("The summary statistics of borrower APR is ")
+summary(pld$BorrowerAPR)
+print("The summary statistics of borrower rate is ")
+summary(pld$BorrowerRate)
+```
+
+The borrower APR and rate are linearly related. The average APR and rate 
+are ~ 22% and 19 % respectively.
+### Loan Amount vs loan term
+```{r echo=FALSE}
+ggplot(aes(x=Term,y=LoanOriginalAmount),data = pld)+
+  geom_boxplot(aes(fill=factor(Term)))+
+  stat_summary(fun.y=mean, geom="point", shape=8)
+```
+
+```{r echo=FALSE}
+summary(pld$LoanOriginalAmount)
+```
+
+Bigger Terms are associated with the big Amounts of Loans. 
+Using the summary stats, we can see the average loan amount is $8337 and the 
+loan amount ranges between $1000 and $35000.
+
+
+
+# MULTIVARIATE ANALYSIS
+
+### Monthly payement by total loan and Loan Term
+
+```{r echo=FALSE}
+ggplot(aes(x=LoanOriginalAmount,y=MonthlyLoanPayment),data=pld)+
+  geom_point(aes(color=factor(Term)),alpha=1/2)
+
+```
+
+```{r}
+summary(pld$MonthlyLoanPayment)
+```
+
+we have seen that the monthly payment increases as the amount of loan gets 
+bigger.For the same loan amount the monthly payment amount is higher for shorter
+terms. From the summary statistics we can see that 
+the average monthly payment is almost $272.
+
+
+### Borrower classification by loan range and loan term?
+
+```{r}
+pld$LoanRange <- cut(as.numeric(as.character(pld$LoanOriginalAmount)),breaks =
+                      seq(0, 35000, by = 5000))
+pld$LoanRange <- factor(pld$LoanRange,levels=c('(0,5e+03]',   '(5e+03,1e+04]',
+'(1e+04,1.5e+04]', '(1.5e+04,2e+04]', '(2e+04,2.5e+04]', '(2.5e+04,3e+04]', 
+'(3e+04,3.5e+04]' ),ordered=TRUE)
+k=table(pld$LoanRange)
+kk=data.frame(k)
+colnames(kk)=c('Loan_range','Number_of_borrowers')
+print(kk)
+
+ggplot(aes(x=LoanRange),data =pld)+geom_bar(aes(fill=factor(Term)))+
+ylab("Number of borrowers ")+xlab('Loan range')+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))#+geom_freqpoly()
+```
+
+It is clear to see that most borrowers have loans in the range from 1-5000 for 
+aperiod of 36 months. Generallly most borrowers borrowed for 36 and 60 months 
+and there are no borrowers borrowed more than 15000 for a period of 12 months.
+
+### Distribution of  borrowers by loan range and employment status? 
+
+```{r echo=FALSE}
+ggplot(aes(x=LoanRange),data =subset(pld,!is.na(EmploymentStatus)))+
+  geom_bar(aes(fill=factor(EmploymentStatus)))+
+  ylab("Number of borrowers ")+xlab('Loan range')+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+most prosper loan amounts are in the range of 0,5000 followed by 5000 - 10,000 
+and most borrowers are employed. 
+
+### Effective yield with rating and term
+
+```{r}
+ggplot(aes(ProsperRating..Alpha.,y=EstimatedLoss),data = subset(pld,!is.na(ProsperRating..Alpha.)))+geom_boxplot(aes(fill=factor(Term)))+
+xlab('Prosper rating')+ylab('Estimated loss')
+summary(pld$EstimatedLoss)
+```
+
+The Estimated Loss Decreases as the Rating increases nd the Term is almost the 
+same for all groups.
+### APR with term and rating
+
+```{r}
+ggplot(aes(ProsperRating..Alpha.,y=BorrowerAPR),data = subset(pld,!is.na(ProsperRating..Alpha.)))+geom_boxplot(aes(fill=factor(Term)))
+``` 
+
+as the Rating Increases the APR decreases, and The 12 Months term members is
+kinda Decreasing until reaching a very small Ratio at the AA Rate.
+
+
+### Correlation Table between different  variables
+
+```{r  echo=FALSE}
+new_pld <- pld[, c("EstimatedEffectiveYield","EstimatedLoss","EstimatedReturn",
+"ProsperRating..numeric.", "EmploymentStatusDuration","CreditScoreRangeLower")]
+m <- cor(na.omit(new_pld))#[,1:8])
+corrplot(m,method = 'number')
+```
+
+a correlation table of some variables.
+
+
+# FINAL PLOTS 
+
+### Plot 1
+
+```{r echo = FALSE}
+ggplot(aes(x=BorrowerAPR),data=pld)+
+geom_bar(binwidth = 0.02,color='red',fill='maroon') +
+geom_vline(xintercept = 0.21880, color='black',linetype='dotted',size=1.2)+
+geom_text(aes(x=0.24, label="Average APR", y=10000), colour="black",
+          angle=90,text=element_text(size=11)) +
+  labs(x="Borrower APR",y="Count",title="Borrower APR distribution")+
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+The loan APR ranges from less than 5 % up to about 51 %. However, there are only 
+very few borrowers with such high and lower APR values. Most borrowers seems to
+have a APR from 10 % to 30 %. The median APR value is ~21 %. 
+
+### plot 2
+```{r echo=FALSE}
+
+by(pld$LoanStatus ,pld$IsBorrowerHomeowner,summary)
+
+p1 <- ggplot(aes(x=IsBorrowerHomeowner),data=
+    subset(pld, (LoanStatus =='Current' )))+
+  geom_bar(fill='green2')+xlab('currently loaners and Has a Home')
+p2 <- ggplot(aes(x=IsBorrowerHomeowner),data =
+subset(pld, (LoanStatus=='Completed' )))+
+geom_bar(fill = 'green2')+xlab('Completed the loan and Has a Home')
+
+p3 <- ggplot(aes(x=IsBorrowerHomeowner), data=
+subset(pld, !(LoanStatus=='Chargedoff' | LoanStatus == 'Defaulted'))) +
+  geom_bar(fill='blue')+xlab('chargedoff or Defaulted and Has a Home')
+
+grid.arrange(p1,p2,p3, ncol = 2)
+```
+
+> I was thinking that most of those who completed the loan should be with home
+but this has changed my opinion!, most of those who completed already are with
+no homes however those who have homes most of them still currently loaners,
+changed off or Defaulted.
+
+### plot 3
+
+```{r echo=FALSE}
+ggplot(aes(x=factor(Term),y=LoanOriginalAmount),data = pld)+
+  geom_boxplot(aes(fill=factor(Term)))+
+  stat_summary(fun.y=mean, geom="point", shape=8)+
+  ylab('Loan Orignal Amount (USD)')
+```
+
+```{r echo=FALSE}
+summary(pld$LoanOriginalAmount)
+```
+
+Bigger Terms are associated with the big Amounts of Loans. 
+Using the summary stats, we can see the average loan amount is $8337 and the 
+loan amount ranges between $1000 and $35000.
+
+
+#REFLECTION
+
+The Prosper loan data set has 113,937 rows and 81 features. I explored some of 
+the 81 variables and tried to find interesting relationships among the  
+variables. My focus of investigation was mostly on the profile of the borrowers 
+such as income range, employment, credit score etc.. and the features of the 
+loan such as APR, estimated loss, loan amount with Term etc..,. I used ggplot to
+check how these variable distributed and related.
+On the process of exploration, 
+I found many missing values in the data and I handeled the problem using R
+data cleaning tools such as from the subset function.
+ 
+From the exploration of the data, I found the APR varies from less than 1 % upto
+a little higher than 50 %. 
+The APR is related to the credit score of the borrowers. It is foud that 
+borrowers with high credit scores have good prosper rating and lower APR. It is 
+also found that most borrowers have loans in the range from 1-5000 for aperiod 
+of 36 months.
+Finally I plotted the correlation table of many variables and seen many 
+interesting correlations.
+
+# REFERENCES
+https://docs.google.com/document/d/e/2PACX-1vRmVtjQrgEPfE3VoiOrdeZ7vLPO_p3KRdb_o-z6E_YJ65tDOiXkwsDpLFKI3lUxbD6UlYtQHXvwiZKx/pub?embedded=true
+https://s3.amazonaws.com/content.udacity-data.com/courses/ud651/
+diamondsExample_2016-05.html
+http://stackoverflow.com/
