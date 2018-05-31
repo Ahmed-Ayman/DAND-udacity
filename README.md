@@ -7,3 +7,4 @@ I'm a DAND graduate student, I've been interested and passionate about the Data 
 The DAND program was divided into 2 semester, it took me around 4 months to finish the first and another 4 months to finish the 2nd since I was just 
 super busy with college, full time development job and another Google Challenge also on Udacity.
 
+feel free to clone my work and edit it or use it for any legal purpose.
